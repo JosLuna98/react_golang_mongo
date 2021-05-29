@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  database:
+    image: mongo
+    container_name: to_do_db
+    expose:
+      - 27017
+    restart: on-failure
+
+  api:
+    container_name: to_do_api
+    image: to_do_api
+    build:
+      context: ./server
+    ports:
+      - 8080:8080
+    restart: on-failure
+    environment:
+      - DB_URI=${DB_URI}
+      - DB_NAME=${DB_NAME}
+      - DB_COLLECTION_NAME=${DB_COLLECTION_NAME}
+
+  app:
+    container_name: to_do_app
+    image: to_do_app
+    build:
+      context: ./client
+    ports:
+      - 80:80
+    restart: on-failure

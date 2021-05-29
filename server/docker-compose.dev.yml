@@ -1,0 +1,9 @@
+version: "3.8"
+
+services:
+  database:
+    image: mongo
+    container_name: to_do_db_dev
+    ports:
+      - 27017:27017
+    restart: on-failure
