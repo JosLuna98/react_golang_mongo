@@ -4,19 +4,22 @@ import logo from '../logo.svg';
 import Task from '../models/task';
 import Api from '../services/api';
 import TaskCard from '../components/task_card';
+import { VoidFunction, EventFunction, onResponse } from '../utils/common';
 
 const Home = () => {
 	const [ task, setTask ]: [string, (task: string) => void] = useState('');
 	const [ items, setItems ]: [Array<Task>, (items: Array<Task>) => void] = useState([] as Array<Task>);
 
-	const getTasks: () => void = () => {
-		Api.GetAllTask().then((res) => {
-			const result: Array<Task> = res.data;
-			setItems(result);
-		});
+	const getTasks: VoidFunction = () => {
+		Api.GetAllTask().then((res) =>
+			onResponse(res, () => {
+				const result: Array<Task> = res.data.result;
+				setItems(result);
+			})
+		);
 	};
 
-	useEffect(() => getTasks(), []);
+	useEffect(getTasks, []);
 
 	const renderItems = () => {
 		if (!items) {
@@ -30,17 +33,17 @@ const Home = () => {
 				</Card>
 			);
 		} else {
-			return items.map((taskItem) => <TaskCard taskItem={taskItem} getTasks={getTasks}/>);
+			return items.map((taskItem) => <TaskCard taskItem={taskItem} getTasks={getTasks} />);
 		}
 	};
 
-	const onSubmit = () => {
+	const onSubmit: VoidFunction = () => {
 		if (task) {
-			Api.CreateTask(task).then((_) => getTasks()).finally(() => setTask(''));
+			Api.CreateTask(task).then((res) => onResponse(res, getTasks)).finally(() => setTask(''));
 		}
 	};
 
-	const onChange = (event: React.ChangeEvent<HTMLInputElement>) => setTask(event.target.value);
+	const onChange: EventFunction = (event: React.ChangeEvent<HTMLInputElement>) => setTask(event.target.value);
 
 	return (
 		<div>
@@ -49,7 +52,14 @@ const Home = () => {
 			</div>
 			<div className="row">
 				<Form onSubmit={onSubmit}>
-					<Input type="text" name="task" onChange={onChange} value={task} fluid placeholder="Task description" />
+					<Input
+						type="text"
+						name="task"
+						onChange={onChange}
+						value={task}
+						fluid
+						placeholder="Task description"
+					/>
 					<Button>Create Task</Button>
 				</Form>
 			</div>

@@ -1,19 +1,20 @@
 import { Card, Icon, SemanticCOLORS } from 'semantic-ui-react';
 import Task from '../models/task';
 import Api from '../services/api';
+import { VoidFunction, onResponse } from '../utils/common';
 
-const TaskCard = ({taskItem, getTasks}: {taskItem: Task, getTasks: () => void}) => {
+const TaskCard = ({ taskItem, getTasks }: { taskItem: Task; getTasks: VoidFunction }) => {
 	let color: SemanticCOLORS = taskItem.status ? 'green' : 'yellow';
 	let style: React.CSSProperties = {
 		wordWrap: 'break-word',
 		textDecorationLine: taskItem.status ? 'line-through' : ''
 	};
 
-	const completeTask = (id: string) => Api.CompleteTask(id).then((_) => getTasks());
+	const completeTask = (id: string) => Api.CompleteTask(id).then((res) => onResponse(res, getTasks));
 
-	const undoTask = (id: string) => Api.UndoTask(id).then((_) => getTasks());
+	const undoTask = (id: string) => Api.UndoTask(id).then((res) => onResponse(res, getTasks));
 
-	const deleteTask = (id: string) => Api.DeleteTask(id).then((_) => getTasks());
+	const deleteTask = (id: string) => Api.DeleteTask(id).then((res) => onResponse(res, getTasks));
 
 	return (
 		<Card key={taskItem._id} color={color} fluid>
