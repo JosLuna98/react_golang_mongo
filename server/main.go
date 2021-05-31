@@ -14,3 +14,12 @@ func main() {
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
+
+//! Uncoment it to testing
+// import (
+// 	"server/test"
+// )
+
+// func main() {
+// 	main_testing.Test()
+// }

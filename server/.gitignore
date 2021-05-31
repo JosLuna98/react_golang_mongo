@@ -11,4 +11,4 @@
 
 # misc
 .DS_Store
-.env.development.local
+.env.dev

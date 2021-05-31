@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"server/models"
 	"log"
 	"net/http"
 	"os"
+	"server/models"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -26,10 +26,10 @@ func init() {
 }
 
 func loadTheEnv() {
-	err := godotenv.Load(".env.development.local")
+	err := godotenv.Load(".env.dev")
 
-	if err == nil {
-		log.Println("development .env file loaded")
+	if err != nil {
+		log.Println("Production mode")
 	}
 }
 
@@ -75,8 +75,8 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	var task models.ToDoList
 	_ = json.NewDecoder(r.Body).Decode(&task)
-	insertOneTask(task)
-	json.NewEncoder(w).Encode(task)
+	payload := insertOneTask(task)
+	json.NewEncoder(w).Encode(payload)
 }
 
 func CompleteTask(w http.ResponseWriter, r *http.Request) {
@@ -86,8 +86,8 @@ func CompleteTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 	params := mux.Vars(r)
-	completeTask(params["id"])
-	json.NewEncoder(w).Encode(params["id"])
+	payload := completeTask(params["id"])
+	json.NewEncoder(w).Encode(payload)
 }
 
 func UndoTask(w http.ResponseWriter, r *http.Request) {
@@ -97,8 +97,8 @@ func UndoTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 	params := mux.Vars(r)
-	undoTask(params["id"])
-	json.NewEncoder(w).Encode(params["id"])
+	payload := undoTask(params["id"])
+	json.NewEncoder(w).Encode(payload)
 }
 
 func DeleteTask(w http.ResponseWriter, r *http.Request) {
@@ -107,14 +107,19 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	params := mux.Vars(r)
-	deleteOneTask(params["id"])
-	json.NewEncoder(w).Encode(params["id"])
+	payload := deleteOneTask(params["id"])
+	json.NewEncoder(w).Encode(payload)
 }
 
-func getAllTask() []primitive.M {
+var errorResult = primitive.M{
+	"error": true,
+}
+
+func getAllTask() primitive.M {
 	cur, err := collection.Find(context.Background(), bson.D{{}})
 	if err != nil {
 		log.Fatal(err)
+		return errorResult
 	}
 
 	var results []primitive.M
@@ -123,62 +128,85 @@ func getAllTask() []primitive.M {
 		e := cur.Decode(&result)
 		if e != nil {
 			log.Fatal(e)
+			return errorResult
 		}
 		results = append(results, result)
 	}
 
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
+		return errorResult
 	}
 
+	fmt.Println("Records retrieved: ", len(results))
+
 	cur.Close(context.Background())
-	return results
+	return primitive.M{
+		"error":  false,
+		"result": results,
+	}
 }
 
-func insertOneTask(task models.ToDoList) {
+func insertOneTask(task models.ToDoList) primitive.M {
 	insertResult, err := collection.InsertOne(context.Background(), task)
 
 	if err != nil {
 		log.Fatal(err)
+		return errorResult
 	}
 
-	fmt.Println("Inserted a Single Record ", insertResult.InsertedID)
+	fmt.Println("Inserted a single Record ", insertResult.InsertedID.(primitive.ObjectID).Hex())
+	return primitive.M{
+		"error": false,
+	}
 }
 
-func completeTask(task string) {
-	fmt.Println(task)
-	id, _ := primitive.ObjectIDFromHex(task)
+func completeTask(taskId string) primitive.M {
+	fmt.Println(taskId)
+	id, _ := primitive.ObjectIDFromHex(taskId)
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{"status": true}}
 	result, err := collection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		log.Fatal(err)
+		return errorResult
 	}
 
 	fmt.Println("modified count: ", result.ModifiedCount)
+	return primitive.M{
+		"error": false,
+	}
 }
 
-func undoTask(task string) {
-	fmt.Println(task)
-	id, _ := primitive.ObjectIDFromHex(task)
+func undoTask(taskId string) primitive.M {
+	fmt.Println(taskId)
+	id, _ := primitive.ObjectIDFromHex(taskId)
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{"status": false}}
 	result, err := collection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		log.Fatal(err)
+		return errorResult
 	}
 
 	fmt.Println("modified count: ", result.ModifiedCount)
+	return primitive.M{
+		"error": false,
+	}
 }
 
-func deleteOneTask(task string) {
-	fmt.Println(task)
-	id, _ := primitive.ObjectIDFromHex(task)
+func deleteOneTask(taskId string) primitive.M {
+	fmt.Println(taskId)
+	id, _ := primitive.ObjectIDFromHex(taskId)
 	filter := bson.M{"_id": id}
 	d, err := collection.DeleteOne(context.Background(), filter)
 	if err != nil {
 		log.Fatal(err)
+		return errorResult
 	}
 
 	fmt.Println("Deleted Document", d.DeletedCount)
+	return primitive.M{
+		"error": false,
+	}
 }
