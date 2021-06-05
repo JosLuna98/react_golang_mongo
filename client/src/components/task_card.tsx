@@ -17,7 +17,7 @@ const TaskCard = ({ taskItem, getTasks }: { taskItem: Task; getTasks: VoidFuncti
 	const deleteTask = (id: string) => Api.DeleteTask(id).then((res) => onResponse(res, getTasks));
 
 	return (
-		<Card key={taskItem._id} color={color} fluid>
+		<Card color={color} fluid>
 			<Card.Content>
 				<Card.Header textAlign="left">
 					<div style={style}>{taskItem.description}</div>

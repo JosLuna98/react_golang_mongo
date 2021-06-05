@@ -33,7 +33,7 @@ const Home = () => {
 				</Card>
 			);
 		} else {
-			return items.map((taskItem) => <TaskCard taskItem={taskItem} getTasks={getTasks} />);
+			return items.map((taskItem) => <TaskCard key={taskItem._id} taskItem={taskItem} getTasks={getTasks} />);
 		}
 	};
 
